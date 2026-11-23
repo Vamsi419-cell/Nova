@@ -1,39 +1,97 @@
-# Nova v1.0 — Known Limitations
+# Nova v2.0 — Known Limitations
 
-Nova v1.0 is a learning-focused AI agent and is not yet production-ready. The following are known limitations of the current implementation.
+Nova v2.0 is an evolving AI agent designed to explore agent orchestration, tool execution, memory management, middleware, and document processing. Although several capabilities have been implemented, the system is not yet production-ready.
 
-## 1. Web Search Is Currently a Stub
+The following limitations are currently known.
 
-The web-search tool does not perform a real internet search yet. It currently uses predefined responses for testing tool-calling and multi-step agent behavior.
+## 1. Web Search Reliability
 
-As a result, Nova cannot reliably retrieve current information from the web.
+The web-search tool has been integrated into the agent, but its implementation and reliability still need to be evaluated.
+
+Nova relies on the language model to formulate search queries and interpret returned results. Search quality, source reliability, and handling of outdated information have not yet been systematically evaluated.
 
 ## 2. Tool Selection Depends on the LLM
 
 The agent relies on the language model to decide when and which tool to call.
 
-If the model incorrectly decides not to use a tool, or selects an inappropriate tool, Nova may produce an incorrect answer even though the tool itself works correctly.
+If the model incorrectly decides not to use a tool, selects an inappropriate tool, or generates invalid tool arguments, Nova may produce an incorrect answer even when the underlying tool works correctly.
 
-## 3. Raw Nova Does Not Persist Conversation Memory
+## 3. Conversation Persistence Is Limited
 
-The raw implementation creates a new message history for every call to `run_agent()`.
+The LangChain implementation uses LangGraph's `InMemorySaver` to maintain conversation state across interactions within a session.
 
-Therefore, previous turns are not automatically available to the raw agent across separate interactions.
+However, checkpoint data exists only in process memory and is lost when Nova terminates or restarts.
 
-The LangChain implementation addresses this within a session using `InMemorySaver`, but that memory is temporary and is lost when the process exits.
+Long-term user memories are stored separately in a local SQLite database and persist across application restarts.
+
+The raw implementation does not automatically preserve conversation history across separate calls to `run_agent()`.
 
 ## 4. Conversation Context Can Grow
 
-The LangChain implementation stores conversation messages in the agent state.
+The LangChain implementation stores conversation messages in agent state.
 
-As a conversation becomes longer, the amount of context sent to the model can increase, leading to higher token usage and potentially less room for new responses.
+Summarization middleware has been introduced to manage growing conversation histories by summarizing older messages and retaining recent context.
 
-There is currently no summarization or long-term memory strategy.
+However, summarization can potentially discard details that become relevant later. Its effectiveness and impact on long-running conversations require further evaluation.
 
-## 5. Limited Evaluation
+## 5. Limited Long-Term Memory Retrieval
 
-Nova currently has only basic unit testing for the calculator tool.
+Nova supports persistent user-specific memories through SQLite.
 
-There is no systematic evaluation dataset for measuring tool-selection accuracy, task completion, response quality, or failure recovery.
+Memory retrieval currently uses simple lexical keyword matching rather than semantic similarity.
 
-A future version should introduce an evaluation set covering single-tool tasks, multi-step tasks, incorrect inputs, tool failures, and ambiguous requests.
+Consequently, queries with different wording but similar meaning may fail to retrieve relevant memories.
+
+The current database also supports only one memory per user per category, meaning that saving another memory under the same category overwrites the previous entry.
+
+## 6. Incomplete Safety and Approval Workflow
+
+Human-in-the-loop middleware has been configured for sensitive tool execution, particularly email sending.
+
+However, the CLI still needs a complete approval, rejection, editing, and interruption-resumption workflow.
+
+PII middleware has not yet been integrated into the agent.
+
+## 7. Structured Output Is Not Yet Integrated
+
+The agent currently supports structured schemas for individual tools, but a general structured response mechanism has not yet been integrated into the agent.
+
+A future implementation should support validated structured responses using Pydantic schemas where appropriate.
+
+## 8. Limited Evaluation and Testing
+
+Nova currently has basic unit testing for the calculator tool.
+
+There is no systematic evaluation dataset for measuring:
+
+- Tool-selection accuracy.
+- Multi-step task completion.
+- Memory retrieval accuracy.
+- Response quality.
+- Middleware behavior.
+- Failure recovery and interruption handling.
+- Streaming correctness.
+
+A future version should introduce an evaluation suite covering these scenarios.
+
+## 9. Document Ingestion Is Not Yet Implemented
+
+Nova does not currently have a dedicated document ingestion pipeline.
+
+It cannot reliably process domain-specific formats such as structured notebooks, PDFs containing complex tables, or HTML documents with nested structures.
+
+Custom document loaders and structure-aware text splitters are planned for the next development phase.
+
+## 10. Model Reliability and Fallback
+
+Retry and fallback model configurations have been defined, but the agent currently uses the primary model directly.
+
+Therefore, automatic recovery from model failures through the configured fallback model is not yet active.
+
+## 11. Limited Deployment and Scalability
+
+Nova currently operates primarily as a local CLI application.
+
+Its in-memory checkpointing, local SQLite storage, and single-process execution model are intended for development and experimentation rather than concurrent production workloads.
+
+Future improvements should introduce persistent checkpoint storage, better service boundaries, and appropriate concurrency and authentication mechanisms.

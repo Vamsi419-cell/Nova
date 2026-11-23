@@ -13,6 +13,7 @@ Nova is a CLI-based AI research assistant built to explore how tool-calling agen
 * Interactive CLI
 * LangChain implementation using `create_agent`
 * Conversation memory using LangGraph's `InMemorySaver`
+* Long-term user memories persisted locally in SQLite (`nova_memory.sqlite3`)
 * Basic tool tests with pytest
 
 ## Architecture
@@ -65,6 +66,9 @@ Final answer
 ```
 
 It uses `@tool`, `create_agent`, and `InMemorySaver`.
+User facts saved through the memory tools are stored in `nova_memory.sqlite3`
+in the project root, so they remain available after restarting the CLI. Set
+`NOVA_MEMORY_DB` to choose a different database path.
 
 ## Setup
 
